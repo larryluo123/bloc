@@ -24,6 +24,7 @@ on:
 
   pull_request:
     paths:
+      - "**"
       - ".github/workflows/flutter_examples.yaml"
       - "packages/flutter_bloc/**"
       - "examples/flutter_bloc_with_stream/**"
