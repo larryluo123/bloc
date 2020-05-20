@@ -3,6 +3,7 @@ name: flutter_examples
 on:
   push:
     paths:
+      - "**"
       - ".github/workflows/flutter_examples.yaml"
       - "packages/flutter_bloc/**"
       - "examples/flutter_bloc_with_stream/**"
