@@ -19,6 +19,7 @@ on:
       - "examples/flutter_timer"
       - "examples/flutter_todos"
       - "examples/flutter_weather"
+      - "examples/flutter_wizard"
       - "examples/github_search/flutter_github_search"      
 
   pull_request:
@@ -39,6 +40,7 @@ on:
       - "examples/flutter_timer"
       - "examples/flutter_todos"
       - "examples/flutter_weather"
+      - "examples/flutter_wizard"
       - "examples/github_search/flutter_github_search"      
 
 jobs:
@@ -61,6 +63,7 @@ jobs:
             "examples/flutter_timer",
             "examples/flutter_todos",
             "examples/flutter_weather",
+            "examples/flutter_wizard",
             "examples/github_search/flutter_github_search",            
           ]
       fail-fast: false
