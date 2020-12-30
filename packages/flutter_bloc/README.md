@@ -1,31 +1,95 @@
-<img src="https://raw.githubusercontent.com/felangel/bloc/master/docs/assets/flutter_bloc_logo_full.png" height="60" alt="Flutter Bloc Package" />
+<p align="right">
+<a href="https://flutter.dev/docs/development/packages-and-plugins/favorites"><img src="https://raw.githubusercontent.com/felangel/bloc/master/docs/assets/flutter_favorite.png" width="100" alt="build"></a>
+</p>
 
-[![Pub](https://img.shields.io/pub/v/flutter_bloc.svg)](https://pub.dev/packages/flutter_bloc)
-[![build](https://github.com/felangel/bloc/workflows/build/badge.svg)](https://github.com/felangel/bloc/actions)
-[![codecov](https://codecov.io/gh/felangel/Bloc/branch/master/graph/badge.svg)](https://codecov.io/gh/felangel/bloc)
-[![style: effective dart](https://img.shields.io/badge/style-effective_dart-40c4ff.svg)](https://github.com/tenhobi/effective_dart)
-[![Flutter Website](https://img.shields.io/badge/flutter-website-deepskyblue.svg)](https://flutter.dev/docs/development/data-and-backend/state-mgmt/options#bloc--rx)
-[![Awesome Flutter](https://img.shields.io/badge/awesome-flutter-blue.svg?longCache=true)](https://github.com/Solido/awesome-flutter#standard)
-[![Flutter Samples](https://img.shields.io/badge/flutter-samples-teal.svg?longCache=true)](http://fluttersamples.com)
-[![Star on GitHub](https://img.shields.io/github/stars/felangel/bloc.svg?style=flat&logo=github&colorB=deeppink&label=stars)](https://github.com/felangel/bloc)
-[![Discord](https://img.shields.io/discord/649708778631200778.svg?logo=discord&color=blue)](https://discord.gg/Hc5KD3g)
-[![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+<img src="https://raw.githubusercontent.com/felangel/bloc/master/docs/assets/flutter_bloc_logo_full.png" height="100" alt="Flutter Bloc Package" />
+</p>
 
-[<img src="https://raw.githubusercontent.com/felangel/bloc/master/docs/assets/flutter_favorite.png" width="200" />](https://flutter.dev/docs/development/packages-and-plugins/favorites)
+<p align="center">
+<a href="https://pub.dev/packages/flutter_bloc"><img src="https://img.shields.io/pub/v/flutter_bloc.svg" alt="Pub"></a>
+<a href="https://github.com/felangel/bloc/actions"><img src="https://github.com/felangel/bloc/workflows/build/badge.svg" alt="build"></a>
+<a href="https://codecov.io/gh/felangel/bloc"><img src="https://codecov.io/gh/felangel/Bloc/branch/master/graph/badge.svg" alt="codecov"></a>
+<a href="https://github.com/felangel/bloc"><img src="https://img.shields.io/github/stars/felangel/bloc.svg?style=flat&logo=github&colorB=deeppink&label=stars" alt="Star on Github"></a>
+<a href="https://github.com/tenhobi/effective_dart"><img src="https://img.shields.io/badge/style-effective_dart-40c4ff.svg" alt="style: effective dart"></a>
+<a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt/options#bloc--rx"><img src="https://img.shields.io/badge/flutter-website-deepskyblue.svg" alt="Flutter Website"></a>
+<a href="https://github.com/Solido/awesome-flutter#standard"><img src="https://img.shields.io/badge/awesome-flutter-blue.svg?longCache=true" alt="Awesome Flutter"></a>
+<a href="https://fluttersamples.com"><img src="https://img.shields.io/badge/flutter-samples-teal.svg?longCache=true" alt="Flutter Samples"></a>
+<a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-purple.svg" alt="License: MIT"></a>
+<a href="https://discord.gg/Hc5KD3g"><img src="https://img.shields.io/discord/649708778631200778.svg?logo=discord&color=blue" alt="Discord"></a>
+<a href="https://github.com/felangel/bloc"><img src="https://tinyurl.com/bloc-library" alt="Bloc Library"></a>
+</p>
 
 ---
 
-A Flutter package that helps implement the [BLoC pattern](https://www.didierboelens.com/2018/08/reactive-programming---streams---bloc).
+Widgets that make it easy to integrate blocs and cubits into [Flutter](https://flutter.dev). Built to work with [package:bloc](https://pub.dev/packages/bloc).
 
-This package is built to work with [bloc](https://pub.dev/packages/bloc).
+**Learn more at [bloclibrary.dev](https://bloclibrary.dev)!**
+
+_\*Note: All widgets exported by the `flutter_bloc` package integrate with both `Cubit` and `Bloc` instances._
+
+## Usage
+
+Lets take a look at how to use `BlocBuilder` to hook up a `CounterPage` widget to a `CounterCubit`.
+
+### counter_cubit.dart
+
+```dart
+class CounterCubit extends Cubit<int> {
+  CounterCubit() : super(0);
+
+  void increment() => emit(state + 1);
+  void decrement() => emit(state - 1);
+}
+```
+
+### counter_page.dart
+
+```dart
+class CounterPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Counter')),
+      body: BlocBuilder<CounterCubit, int>(
+        builder: (context, count) => Center(child: Text('$count')),
+      ),
+      floatingActionButton: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 5.0),
+            child: FloatingActionButton(
+              child: const Icon(Icons.add),
+              onPressed: () => context.read<CounterCubit>().increment(),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 5.0),
+            child: FloatingActionButton(
+              child: const Icon(Icons.remove),
+              onPressed: () => context.read<CounterCubit>().decrement(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+At this point we have successfully separated our presentational layer from our business logic layer. Notice that the `CounterPage` widget knows nothing about what happens when a user taps the buttons. The widget simply tells the `CounterCubit` that the user has pressed either the increment or decrement button.
 
 ## Bloc Widgets
 
-**BlocBuilder** is a Flutter widget which requires a `Bloc` and a `builder` function. `BlocBuilder` handles building the widget in response to new states. `BlocBuilder` is very similar to `StreamBuilder` but has a more simple API to reduce the amount of boilerplate code needed. The `builder` function will potentially be called many times and should be a [pure function](https://en.wikipedia.org/wiki/Pure_function) that returns a widget in response to the state.
+### BlocBuilder
+
+**BlocBuilder** is a Flutter widget which requires a `cubit` and a `builder` function. `BlocBuilder` handles building the widget in response to new states. `BlocBuilder` is very similar to `StreamBuilder` but has a more simple API to reduce the amount of boilerplate code needed. The `builder` function will potentially be called many times and should be a [pure function](https://en.wikipedia.org/wiki/Pure_function) that returns a widget in response to the state.
 
 See `BlocListener` if you want to "do" anything in response to state changes such as navigation, showing a dialog, etc...
 
-If the bloc parameter is omitted, `BlocBuilder` will automatically perform a lookup using `BlocProvider` and the current `BuildContext`.
+If the cubit parameter is omitted, `BlocBuilder` will automatically perform a lookup using `BlocProvider` and the current `BuildContext`.
 
 ```dart
 BlocBuilder<BlocA, BlocAState>(
@@ -35,22 +99,22 @@ BlocBuilder<BlocA, BlocAState>(
 )
 ```
 
-Only specify the bloc if you wish to provide a bloc that will be scoped to a single widget and isn't accessible via a parent `BlocProvider` and the current `BuildContext`.
+Only specify the cubit if you wish to provide a cubit that will be scoped to a single widget and isn't accessible via a parent `BlocProvider` and the current `BuildContext`.
 
 ```dart
 BlocBuilder<BlocA, BlocAState>(
-  bloc: blocA, // provide the local bloc instance
+  cubit: blocA, // provide the local bloc instance
   builder: (context, state) {
     // return widget here based on BlocA's state
   }
 )
 ```
 
-If you want fine-grained control over when the builder function is called you can provide an optional `condition` to `BlocBuilder`. The `condition` takes the previous bloc state and current bloc state and returns a boolean. If `condition` returns true, `builder` will be called with `state` and the widget will rebuild. If `condition` returns false, `builder` will not be called with `state` and no rebuild will occur.
+For fine-grained control over when the `builder` function is called an optional `buildWhen` can be provided. `buildWhen` takes the previous cubit state and current cubit state and returns a boolean. If `buildWhen` returns true, `builder` will be called with `state` and the widget will rebuild. If `buildWhen` returns false, `builder` will not be called with `state` and no rebuild will occur.
 
 ```dart
 BlocBuilder<BlocA, BlocAState>(
-  condition: (previousState, state) {
+  buildWhen: (previousState, state) {
     // return true/false to determine whether or not
     // to rebuild the widget with state
   },
@@ -60,9 +124,11 @@ BlocBuilder<BlocA, BlocAState>(
 )
 ```
 
-**BlocProvider** is a Flutter widget which provides a bloc to its children via `BlocProvider.of<T>(context)`. It is used as a dependency injection (DI) widget so that a single instance of a bloc can be provided to multiple widgets within a subtree.
+### BlocProvider
 
-In most cases, `BlocProvider` should be used to create new `blocs` which will be made available to the rest of the subtree. In this case, since `BlocProvider` is responsible for creating the bloc, it will automatically handle closing the bloc.
+**BlocProvider** is a Flutter widget which provides a cubit to its children via `BlocProvider.of<T>(context)`. It is used as a dependency injection (DI) widget so that a single instance of a cubit can be provided to multiple widgets within a subtree.
+
+In most cases, `BlocProvider` should be used to create new cubits which will be made available to the rest of the subtree. In this case, since `BlocProvider` is responsible for creating the cubit, it will automatically handle closing it.
 
 ```dart
 BlocProvider(
@@ -71,7 +137,19 @@ BlocProvider(
 );
 ```
 
-In some cases, `BlocProvider` can be used to provide an existing bloc to a new portion of the widget tree. This will be most commonly used when an existing `bloc` needs to be made available to a new route. In this case, `BlocProvider` will not automatically close the bloc since it did not create it.
+By default, BlocProvider will create the cubit lazily, meaning `create` will get executed when the cubit is looked up via `BlocProvider.of<BlocA>(context)`.
+
+To override this behavior and force `create` to be run immediately, `lazy` can be set to `false`.
+
+```dart
+BlocProvider(
+  lazy: false,
+  create: (BuildContext context) => BlocA(),
+  child: ChildA(),
+);
+```
+
+In some cases, `BlocProvider` can be used to provide an existing cubit to a new portion of the widget tree. This will be most commonly used when an existing `cubit` needs to be made available to a new route. In this case, `BlocProvider` will not automatically close the cubit since it did not create it.
 
 ```dart
 BlocProvider.value(
@@ -84,11 +162,31 @@ then from either `ChildA`, or `ScreenA` we can retrieve `BlocA` with:
 
 ```dart
 // with extensions
-context.bloc<BlocA>();
+context.read<BlocA>();
 
 // without extensions
-BlocProvider.of<BlocA>(context)
+BlocProvider.of<BlocA>(context);
 ```
+
+The above snippets result in a one time lookup and the widget will not be notified of changes. To retrieve the instance and subscribe to subsequent state changes use:
+
+```dart
+// with extensions
+context.watch<BlocA>();
+
+// without extensions
+BlocProvider.of<BlocA>(context, listen: true);
+```
+
+In addition, `context.select` can be used to retrieve part of a state and react to changes only when the selected part changes.
+
+```dart
+final isPositive = context.select((CounterBloc b) => b.state >= 0);
+```
+
+The snippet above will only rebuild if the state of the `CounterBloc` changes from positive to negative or vice versa.
+
+### MultiBlocProvider
 
 **MultiBlocProvider** is a Flutter widget that merges multiple `BlocProvider` widgets into one.
 `MultiBlocProvider` improves the readability and eliminates the need to nest multiple `BlocProviders`.
@@ -126,9 +224,11 @@ MultiBlocProvider(
 )
 ```
 
-**BlocListener** is a Flutter widget which takes a `BlocWidgetListener` and an optional `Bloc` and invokes the `listener` in response to state changes in the bloc. It should be used for functionality that needs to occur once per state change such as navigation, showing a `SnackBar`, showing a `Dialog`, etc...
+### BlocListener
 
-`listener` is only called once for each state change (**NOT** including `initialState`) unlike `builder` in `BlocBuilder` and is a `void` function.
+**BlocListener** is a Flutter widget which takes a `BlocWidgetListener` and an optional `cubit` and invokes the `listener` in response to state changes in the cubit. It should be used for functionality that needs to occur once per state change such as navigation, showing a `SnackBar`, showing a `Dialog`, etc...
+
+`listener` is only called once for each state change (**NOT** including the initial state) unlike `builder` in `BlocBuilder` and is a `void` function.
 
 If the bloc parameter is omitted, `BlocListener` will automatically perform a lookup using `BlocProvider` and the current `BuildContext`.
 
@@ -141,22 +241,22 @@ BlocListener<BlocA, BlocAState>(
 )
 ```
 
-Only specify the bloc if you wish to provide a bloc that is otherwise not accessible via `BlocProvider` and the current `BuildContext`.
+Only specify the cubit if you wish to provide a cubit that is otherwise not accessible via `BlocProvider` and the current `BuildContext`.
 
 ```dart
 BlocListener<BlocA, BlocAState>(
-  bloc: blocA,
+  cubit: blocA,
   listener: (context, state) {
     // do stuff here based on BlocA's state
   }
 )
 ```
 
-If you want fine-grained control over when the listener function is called you can provide an optional `condition` to `BlocListener`. The `condition` takes the previous bloc state and current bloc state and returns a boolean. If `condition` returns true, `listener` will be called with `state`. If `condition` returns false, `listener` will not be called with `state`.
+For fine-grained control over when the `listener` function is called an optional `listenWhen` can be provided. `listenWhen` takes the previous cubit state and current cubit state and returns a boolean. If `listenWhen` returns true, `listener` will be called with `state`. If `listenWhen` returns false, `listener` will not be called with `state`.
 
 ```dart
 BlocListener<BlocA, BlocAState>(
-  condition: (previousState, state) {
+  listenWhen: (previousState, state) {
     // return true/false to determine whether or not
     // to call listener with state
   },
@@ -166,6 +266,8 @@ BlocListener<BlocA, BlocAState>(
   child: Container(),
 )
 ```
+
+### MultiBlocListener
 
 **MultiBlocListener** is a Flutter widget that merges multiple `BlocListener` widgets into one.
 `MultiBlocListener` improves the readability and eliminates the need to nest multiple `BlocListeners`.
@@ -203,9 +305,11 @@ MultiBlocListener(
 )
 ```
 
-**BlocConsumer** exposes a `builder` and `listener` in order react to new states. `BlocConsumer` is analogous to a nested `BlocListener` and `BlocBuilder` but reduces the amount of boilerplate needed. `BlocConsumer` should only be used when it is necessary to both rebuild UI and execute other reactions to state changes in the `bloc`. `BlocConsumer` takes a required `BlocWidgetBuilder` and `BlocWidgetListener` and an optional `bloc`, `BlocBuilderCondition`, and `BlocListenerCondition`.
+### BlocConsumer
 
-If the `bloc` parameter is omitted, `BlocConsumer` will automatically perform a lookup using
+**BlocConsumer** exposes a `builder` and `listener` in order react to new states. `BlocConsumer` is analogous to a nested `BlocListener` and `BlocBuilder` but reduces the amount of boilerplate needed. `BlocConsumer` should only be used when it is necessary to both rebuild UI and execute other reactions to state changes in the `cubit`. `BlocConsumer` takes a required `BlocWidgetBuilder` and `BlocWidgetListener` and an optional `cubit`, `BlocBuilderCondition`, and `BlocListenerCondition`.
+
+If the `cubit` parameter is omitted, `BlocConsumer` will automatically perform a lookup using
 `BlocProvider` and the current `BuildContext`.
 
 ```dart
@@ -219,7 +323,7 @@ BlocConsumer<BlocA, BlocAState>(
 )
 ```
 
-An optional `listenWhen` and `buildWhen` can be implemented for more granular control over when `listener` and `builder` are called. The `listenWhen` and `buildWhen` will be invoked on each `bloc` `state` change. They each take the previous `state` and current `state` and must return a `bool` which determines whether or not the `builder` and/or `listener` function will be invoked. The previous `state` will be initialized to the `state` of the `bloc` when the `BlocConsumer` is initialized. `listenWhen` and `buildWhen` are optional and if they aren't implemented, they will default to `true`.
+An optional `listenWhen` and `buildWhen` can be implemented for more granular control over when `listener` and `builder` are called. The `listenWhen` and `buildWhen` will be invoked on each `cubit` `state` change. They each take the previous `state` and current `state` and must return a `bool` which determines whether or not the `builder` and/or `listener` function will be invoked. The previous `state` will be initialized to the `state` of the `cubit` when the `BlocConsumer` is initialized. `listenWhen` and `buildWhen` are optional and if they aren't implemented, they will default to `true`.
 
 ```dart
 BlocConsumer<BlocA, BlocAState>(
@@ -240,6 +344,8 @@ BlocConsumer<BlocA, BlocAState>(
 )
 ```
 
+### RepositoryProvider
+
 **RepositoryProvider** is a Flutter widget which provides a repository to its children via `RepositoryProvider.of<T>(context)`. It is used as a dependency injection (DI) widget so that a single instance of a repository can be provided to multiple widgets within a subtree. `BlocProvider` should be used to provide blocs whereas `RepositoryProvider` should only be used for repositories.
 
 ```dart
@@ -253,11 +359,13 @@ then from `ChildA` we can retrieve the `Repository` instance with:
 
 ```dart
 // with extensions
-context.repository<RepositoryA>();
+context.read<RepositoryA>();
 
 // without extensions
 RepositoryProvider.of<RepositoryA>(context)
 ```
+
+### MultiRepositoryProvider
 
 **MultiRepositoryProvider** is a Flutter widget that merges multiple `RepositoryProvider` widgets into one.
 `MultiRepositoryProvider` improves the readability and eliminates the need to nest multiple `RepositoryProvider`.
@@ -294,84 +402,6 @@ MultiRepositoryProvider(
   child: ChildA(),
 )
 ```
-
-## Usage
-
-Lets take a look at how to use `BlocBuilder` to hook up a `CounterPage` widget to a `CounterBloc`.
-
-### counter_bloc.dart
-
-```dart
-enum CounterEvent { increment, decrement }
-
-class CounterBloc extends Bloc<CounterEvent, int> {
-  @override
-  int get initialState => 0;
-
-  @override
-  Stream<int> mapEventToState(CounterEvent event) async* {
-    switch (event) {
-      case CounterEvent.decrement:
-        yield state - 1;
-        break;
-      case CounterEvent.increment:
-        yield state + 1;
-        break;
-    }
-  }
-}
-```
-
-### counter_page.dart
-
-```dart
-class CounterPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final CounterBloc counterBloc = context.bloc<CounterBloc>();
-
-    return Scaffold(
-      appBar: AppBar(title: Text('Counter')),
-      body: BlocBuilder<CounterBloc, int>(
-        builder: (context, count) {
-          return Center(
-            child: Text(
-              '$count',
-              style: TextStyle(fontSize: 24.0),
-            ),
-          );
-        },
-      ),
-      floatingActionButton: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: <Widget>[
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 5.0),
-            child: FloatingActionButton(
-              child: Icon(Icons.add),
-              onPressed: () {
-                counterBloc.add(CounterEvent.increment);
-              },
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 5.0),
-            child: FloatingActionButton(
-              child: Icon(Icons.remove),
-              onPressed: () {
-                counterBloc.add(CounterEvent.decrement);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-```
-
-At this point we have successfully separated our presentational layer from our business logic layer. Notice that the `CounterPage` widget knows nothing about what happens when a user taps the buttons. The widget simply tells the `CounterBloc` that the user has pressed either the increment or decrement button.
 
 ## Gallery
 
@@ -419,6 +449,7 @@ At this point we have successfully separated our presentational layer from our b
 - [Counter](https://bloclibrary.dev/#/fluttercountertutorial) - an example of how to create a `CounterBloc` to implement the classic Flutter Counter app.
 - [Form Validation](https://github.com/felangel/bloc/tree/master/examples/flutter_form_validation) - an example of how to use the `bloc` and `flutter_bloc` packages to implement form validation.
 - [Bloc with Stream](https://github.com/felangel/bloc/tree/master/examples/flutter_bloc_with_stream) - an example of how to hook up a `bloc` to a `Stream` and update the UI in response to data from the `Stream`.
+- [Complex List](https://github.com/felangel/bloc/tree/master/examples/flutter_complex_list) - an example of how to manage a list of items and asynchronously delete items one at a time using `bloc` and `flutter_bloc`.
 - [Infinite List](https://bloclibrary.dev/#/flutterinfinitelisttutorial) - an example of how to use the `bloc` and `flutter_bloc` packages to implement an infinite scrolling list.
 - [Login Flow](https://bloclibrary.dev/#/flutterlogintutorial) - an example of how to use the `bloc` and `flutter_bloc` packages to implement a Login Flow.
 - [Firebase Login](https://bloclibrary.dev/#/flutterfirebaselogintutorial) - an example of how to use the `bloc` and `flutter_bloc` packages to implement login via Firebase.
@@ -429,11 +460,18 @@ At this point we have successfully separated our presentational layer from our b
 - [Firestore Todos](https://bloclibrary.dev/#/flutterfirestoretodostutorial) - an example of how to create a Todos Application using the `bloc` and `flutter_bloc` packages that integrates with cloud firestore.
 - [Shopping Cart](https://github.com/felangel/bloc/tree/master/examples/flutter_shopping_cart) - an example of how to create a Shopping Cart Application using the `bloc` and `flutter_bloc` packages based on [flutter samples](https://github.com/flutter/samples/tree/master/provider_shopper).
 - [Dynamic Form](https://github.com/felangel/bloc/tree/master/examples/flutter_dynamic_form) - an example of how to use the `bloc` and `flutter_bloc` packages to implement a dynamic form which pulls data from a repository.
+- [Wizard](https://github.com/felangel/bloc/tree/master/examples/flutter_wizard) - an example of how to build a multi-step wizard using the `bloc` and `flutter_bloc` packages.
+- [GraphQL](https://github.com/felangel/bloc/tree/master/examples/flutter_graphql_jobs) - an example of how to use the `bloc` and `flutter_bloc` packages with `graphql` to retrieve data from [api.graphql.jobs](https://api.graphql.jobs).
+- [Fluttersaurus](https://github.com/felangel/fluttersaurus) - an example of how to use the `bloc` and `flutter_bloc` packages to create a thesuarus app -- made for Bytconf Flutter 2020.
 
 ## Dart Versions
 
 - Dart 2: >= 2.6.0
 
-### Maintainers
+## Maintainers
 
 - [Felix Angelov](https://github.com/felangel)
+
+## Supporters
+
+[<img src="https://raw.githubusercontent.com/felangel/bloc/master/docs/assets/vgv_logo.png" width="120" />](https://verygood.ventures)

@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/felangel/bloc/master/docs/assets/bloc_logo_full.png" height="60" alt="Bloc" /><small>4.0.0</small>
+<img src="https://raw.githubusercontent.com/felangel/bloc/master/docs/assets/bloc_logo_full.png" height="100" alt="Bloc" /><br/><small>v6.1.0</small>
 
 [![build](https://github.com/felangel/bloc/workflows/build/badge.svg)](https://github.com/felangel/bloc/actions)
 [![codecov](https://codecov.io/gh/felangel/Bloc/branch/master/graph/badge.svg)](https://codecov.io/gh/felangel/bloc)
@@ -10,11 +10,12 @@
 [![Discord](https://img.shields.io/discord/649708778631200778.svg?logo=discord&color=blue)](https://discord.gg/Hc5KD3g)
 [![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 
-> una librería de administración de estado predecible para Dart.
+> una biblioteca de administración de estado predecible para Dart.
 
 - Simple y Liviano
 - Altamente Testeable
 - Para Dart, Flutter y AngularDart
 
+[Migrar a v6.0.0](es/migration.md)
 [GitHub](https://github.com/felangel/bloc/)
 [Comenzar](es/gettingstarted.md)

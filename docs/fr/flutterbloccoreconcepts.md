@@ -1,6 +1,6 @@
 # Flutter Bloc Core Concepts
 
-?> Assurez vous d'avoir lu attentivement et d'avoir compris ces sections avec de travailler avec [flutter_bloc](https://pub.dev/packages/flutter_bloc).
+?> Assurez vous d'avoir lu attentivement et d'avoir compris ces sections avant de travailler avec [flutter_bloc](https://pub.dev/packages/flutter_bloc).
 
 ## Bloc Widgets
 
@@ -18,21 +18,27 @@ Spécifiez le bloc seulement si vous voulez fournir un bloc qui aura pour porté
 
 [bloc_builder.dart](../_snippets/flutter_bloc_core_concepts/bloc_builder_explicit_bloc.dart.md ':include')
 
-Si vous voulez avoir plus de controle sur la fonction builder lorsqu'elle est appelée, vous pouvez fournir une `condition` optionnelle au `BlocBuilder`. La `condition` prend le state précédent du bloc et le compare au state du bloc actuel pour retourner un boolean. Si la `condition` renvoie true, `builder` va être appelé avec `state` et le widget sera reconstruit. Si `condition` retourne false, `builder` ne sera pas appelé avec `state` et la reconstruction n'aura pas lieu.
+Si vous voulez avoir plus de controle sur la fonction builder lorsqu'elle est appelée, vous pouvez fournir une `buildWhen` optionnelle au `BlocBuilder`. La `buildWhen` prend le state précédent du bloc et le compare au state du bloc actuel pour retourner un boolean. Si la `buildWhen` renvoie true, `builder` va être appelé avec `state` et le widget sera reconstruit. Si `buildWhen` retourne false, `builder` ne sera pas appelé avec `state` et la reconstruction n'aura pas lieu.
 
 [bloc_builder.dart](../_snippets/flutter_bloc_core_concepts/bloc_builder_condition.dart.md ':include')
 
 ### BlocProvider
 
-**BlocProvider** est un widget Flutter qui fournit un bloc a son enfant(children) via `BlocProvider.of<T>(context)`. C'est utilisé comme un widget à injection dépendante (dependency injection) pour qu'une seule instance d'un bloc puisse être distribué à plusieurs widgets à l'intérieur d'un sous-arbre (subtree).
+**BlocProvider** est un widget Flutter qui fournit un bloc a ses enfants via `BlocProvider.of<T>(context)`. C'est utilisé comme un widget à injection dépendante (dependency injection) pour qu'une seule instance d'un bloc puisse être distribué à plusieurs widgets à l'intérieur d'un sous-arbre (subtree).
 
-La plus part du temps, `BlocProvider` devrait être utilisé pour créer de nouveaux `blocs` qui seront rendus disponibles au reste du subtree. Dans ce cas, puisque `BlocProvider` est responsable pour la création des blocs, il va automatiquement gérer la fermeture des blocs.
+Dans la plupart des cas, `BlocProvider` doit être utilisé pour créer de nouveaux blocs qui seront mis à la disposition du reste du sous-arbre. Dans ce cas, puisque `BlocProvider` est responsable de la création du bloc, il gérera aussi automatiquement la fermeture du bloc.
 
 [bloc_provider.dart](../_snippets/flutter_bloc_core_concepts/bloc_provider.dart.md ':include')
 
-Dans certains cas, `BlocProvider` peut-être utilisé pour fournir un bloc existant a une nouvelle portion dans notre widget tree (arbre). Cette pratique est souvent utilisée quand nous avons un `bloc` déjà existant qui a besoin d'être disponible à une nouvelle route. Dans ce cas, `BlocProvider` ne fermera pas automatiquement le bloc puisqu'il ne l'a pas crée.
+Par défaut, `BlocProvider` initialisera le bloc tradivement (Lazy initialization), ce qui signifie que` create` sera exécuté lorsque le bloc sera recherché via `BlocProvider.of <BlocA> (contexte)`.
 
-[bloc_provider.dart](../_snippets/flutter_bloc_core_concepts/bloc_provider_value.dart.md ':include')
+Pour remplacer ce comportement et forcer la création à être exécutée immédiatement, `lazy` peut être défini à `false`.
+
+[bloc_provider_lazy.dart](_snippets/flutter_bloc_core_concepts/bloc_provider_lazy.dart.md ':include')
+
+Dans certains cas, `BlocProvider` peut-être utilisé pour fournir un bloc existant à une nouvelle portion dans notre widget tree (arbre). Cette pratique est souvent utilisée quand nous avons un `bloc` déjà existant qui a besoin d'être disponible à une nouvelle route. Dans ce cas, `BlocProvider` ne fermera pas automatiquement le bloc puisqu'il ne l'a pas crée.
+
+[bloc_provider_value.dart](../_snippets/flutter_bloc_core_concepts/bloc_provider_value.dart.md ':include')
 
 ensuite depuis `ChildA` ou `ScreenA` nous pouvons récupérer le `BlocA` avec:
 
@@ -41,7 +47,7 @@ ensuite depuis `ChildA` ou `ScreenA` nous pouvons récupérer le `BlocA` avec:
 ### MultiBlocProvider
 
 **MultiBlocProvider** est widget Flutter qui fusionne de multiples widgets `BlocProvider` widgets en un seul.
-`MultiBlocProvider` améliorer la lecture et élimine le besoin d'encapsuler plusieurs `BlocProviders`.
+`MultiBlocProvider` améliore la lecture et élimine le besoin d'encapsuler plusieurs `BlocProviders`.
 En utilisant `MultiBlocProvider` nous passons de:
 
 [bloc_provider.dart](../_snippets/flutter_bloc_core_concepts/nested_bloc_provider.dart.md ':include')
@@ -64,7 +70,7 @@ Spécifié le bloc seulement si vous voulez fournir un bloc qui n'est pas access
 
 [bloc_listener.dart](../_snippets/flutter_bloc_core_concepts/bloc_listener_explicit_bloc.dart.md ':include')
 
-Si vous voulez avoir plus de contrôle lorsque la fonction listener est appelé, vous pouvez utiliser une `condition` optionnele au `BlocListener`. La `condition` prend le précédent state du bloc et celui du bloc actuel pour retourner un boolean. Si `condition` renvoie true, `listener` sera appelé avec `state`. Si `condition` renvoie false, `listener` ne sera pas appelé avec `state`.
+Si vous voulez avoir plus de contrôle lorsque la fonction listener est appelé, vous pouvez utiliser une `listenWhen` optionnele au `BlocListener`. La `listenWhen` prend le précédent state du bloc et celui du bloc actuel pour retourner un boolean. Si `listenWhen` renvoie true, `listener` sera appelé avec `state`. Si `listenWhen` renvoie false, `listener` ne sera pas appelé avec `state`.
 
 [bloc_listener.dart](../_snippets/flutter_bloc_core_concepts/bloc_listener_condition.dart.md ':include')
 

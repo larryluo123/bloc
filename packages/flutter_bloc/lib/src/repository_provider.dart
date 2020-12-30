@@ -6,14 +6,12 @@ import 'package:provider/single_child_widget.dart';
 /// of multiple [RepositoryProvider]s.
 mixin RepositoryProviderSingleChildWidget on SingleChildWidget {}
 
-/// {@template repositoryprovider}
-/// Takes a `ValueBuilder` that is responsible for creating the repository and
-/// a [child] which will have access to the repository via
+/// {@template repository_provider}
+/// Takes a [Create] function that is responsible for creating the repository
+/// and a `child` which will have access to the repository via
 /// `RepositoryProvider.of(context)`.
 /// It is used as a dependency injection (DI) widget so that a single instance
 /// of a repository can be provided to multiple widgets within a subtree.
-///
-/// Lazily creates the provided repository unless [lazy] is set to `false`.
 ///
 /// ```dart
 /// RepositoryProvider(
@@ -21,10 +19,20 @@ mixin RepositoryProviderSingleChildWidget on SingleChildWidget {}
 ///   child: ChildA(),
 /// );
 /// ```
+///
+/// Lazily creates the repository unless `lazy` is set to `false`.
+///
+/// ```dart
+/// RepositoryProvider(
+///   lazy: false,`
+///   create: (context) => RepositoryA(),
+///   child: ChildA(),
+/// );
+/// ```
 /// {@endtemplate}
 class RepositoryProvider<T> extends Provider<T>
     with RepositoryProviderSingleChildWidget {
-  /// {@macro repositoryprovider}
+  /// {@macro repository_provider}
   RepositoryProvider({
     Key key,
     @required Create<T> create,
@@ -41,7 +49,7 @@ class RepositoryProvider<T> extends Provider<T>
   /// Takes a repository and a [child] which will have access to the repository.
   /// A new repository should not be created in `RepositoryProvider.value`.
   /// Repositories should always be created using the default constructor
-  /// within the [builder].
+  /// within the [Create] function.
   RepositoryProvider.value({
     Key key,
     @required T value,
@@ -54,19 +62,20 @@ class RepositoryProvider<T> extends Provider<T>
 
   /// Method that allows widgets to access a repository instance as long as
   /// their `BuildContext` contains a [RepositoryProvider] instance.
-  static T of<T>(BuildContext context) {
+  static T of<T>(BuildContext context, {bool listen = false}) {
     try {
-      return Provider.of<T>(context, listen: false);
-    } on ProviderNotFoundException catch (_) {
+      return Provider.of<T>(context, listen: listen);
+    } on ProviderNotFoundException catch (e) {
+      if (e.valueType != T) rethrow;
       throw FlutterError(
-        """
+        '''
         RepositoryProvider.of() called with a context that does not contain a repository of type $T.
         No ancestor could be found starting from the context that was passed to RepositoryProvider.of<$T>().
 
         This can happen if the context you used comes from a widget above the RepositoryProvider.
 
         The context used was: $context
-        """,
+        ''',
       );
     }
   }
@@ -83,5 +92,8 @@ extension RepositoryProviderExtension on BuildContext {
   /// ```dart
   /// RepositoryProvider.of<T>(context)
   /// ```
+  @Deprecated(
+    'Use context.read or context.watch instead. Will be removed in v7.0.0',
+  )
   T repository<T>() => RepositoryProvider.of<T>(this);
 }

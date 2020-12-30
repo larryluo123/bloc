@@ -8,29 +8,25 @@ abstract class MyFormEvent extends Equatable {
 }
 
 class EmailChanged extends MyFormEvent {
-  final String email;
-
   const EmailChanged({@required this.email});
+
+  final String email;
 
   @override
   List<Object> get props => [email];
-
-  @override
-  String toString() => 'EmailChanged { email: $email }';
 }
 
-class PasswordChanged extends MyFormEvent {
-  final String password;
+class EmailUnfocused extends MyFormEvent {}
 
+class PasswordChanged extends MyFormEvent {
   const PasswordChanged({@required this.password});
+
+  final String password;
 
   @override
   List<Object> get props => [password];
-
-  @override
-  String toString() => 'PasswordChanged { password: $password }';
 }
 
-class FormSubmitted extends MyFormEvent {}
+class PasswordUnfocused extends MyFormEvent {}
 
-class FormReset extends MyFormEvent {}
+class FormSubmitted extends MyFormEvent {}

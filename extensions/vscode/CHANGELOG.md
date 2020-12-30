@@ -1,3 +1,119 @@
+# 5.5.0
+
+- feat: add `checkForUpdates` configuration in extension settings
+
+# 5.4.0
+
+- feat: add snippets for:
+  - `context.read`
+  - `context.select`
+  - `context.watch`
+- feat: update to latest packages
+  - angular_bloc -> ^6.0.1
+  - bloc -> ^6.1.0
+  - bloc_test -> ^7.1.0
+  - equatable -> ^1.2.5
+  - flutter_bloc -> ^6.1.0
+  - hydrated_bloc -> ^6.0.3
+  - sealed_flutter_bloc -> ^6.0.0
+
+# 5.3.2
+
+- fix: update dependencies to fix potential security vulnerabilities
+
+# 5.3.1
+
+- fix: freezed cubit template typo
+
+# 5.3.0
+
+- feat: make templates configurable via workspace settings
+- feat: improve cubit state equatable template
+- fix: remove unused dependency in freezed bloc template
+
+# 5.2.0
+
+- feat: updates to snippets
+  - `contextbloc` -> `ctxbloc`
+  - `contextrepository` -> `ctxrepo`
+  - `repositoryof` -> `repoof`
+  - `repositoryprovider` -> `repoprovider`
+  - `multirepositoryprovider` -> `multirepoprovider`
+  - `blocstate` (new)
+  - `blocevent` (new)
+
+# 5.1.1
+
+- fix: freezed template typo
+
+# 5.1.0
+
+- feat: add new bloc/cubit support for `package:freezed`
+- feat: add snippet support for `package:freezed`
+  - `fstate`: new freezed state
+  - `fevent`: new freezed event
+  - `feventwhen`: new freezed event.when helper function
+  - `feventmap`: new freezed event.map helper function
+- feat: add bloc code actions
+  - Wrap with `BlocBuilder`
+  - Wrap with `BlocListener`
+  - Wrap with `BlocConsumer`
+  - Wrap with `BlocProvider`
+  - Wrap with `RepositoryProvider`
+
+# 5.0.0
+
+- **BREAKING**: update to latest bloc packages
+  - bloc -> ^6.0.0
+  - bloc_test -> ^7.0.0
+  - flutter_bloc -> ^6.0.0
+  - hydrated_bloc -> ^6.0.0
+- fix: remove error dialog when no `pubspec.yaml` found in root
+
+# 4.2.2
+
+- fix: Equatable not being recognized on Windows
+
+# 4.2.1
+
+- fix: `CubitObserver` snippet fixes
+- fix: `BlocObserver` snippet fixes
+
+# 4.2.0
+
+- feat: Add Open Migration Guide for `bloc`, `flutter_bloc`, and `hydrated_bloc`
+
+# 4.1.1
+
+- fix: package version analysis on dev_dependencies
+
+# 4.1.0
+
+- Include "Cubit: New Cubit" command to generate a cubit and state
+- Include Cubit Ecosystem when performing package version analysis
+- Infer Equatable Usage
+- Update snippets to support
+  - `Cubit`
+  - `CubitBuilder`
+  - `CubitListener`
+  - `MultiCubitListener`
+  - `CubitConsumer`
+  - `CubitProvider`
+  - `MultiCubitProvider`
+  - `CubitObserver`
+  - `context.cubit()`
+  - `CubitProvider.of()`
+
+# 4.0.0
+
+Update latest package versions:
+
+- equatable -> ^1.2.0
+- bloc -> ^5.0.0
+- bloc_test -> ^6.0.0
+- flutter_bloc -> ^5.0.0
+- hydrated_bloc -> ^5.0.0
+
 # 3.6.0
 
 Update latest package versions:

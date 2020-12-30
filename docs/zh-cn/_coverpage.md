@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/felangel/bloc/master/docs/assets/bloc_logo_full.png" height="60" alt="Bloc" /><small>4.0.0</small>
+<img src="https://raw.githubusercontent.com/felangel/bloc/master/docs/assets/bloc_logo_full.png" height="100" alt="Bloc" /><br/><small>v6.1.0</small>
 
 [![build](https://github.com/felangel/bloc/workflows/build/badge.svg)](https://github.com/felangel/bloc/actions)
 [![codecov](https://codecov.io/gh/felangel/Bloc/branch/master/graph/badge.svg)](https://codecov.io/gh/felangel/bloc)
@@ -10,11 +10,12 @@
 [![Discord](https://img.shields.io/discord/649708778631200778.svg?logo=discord&color=blue)](https://discord.gg/Hc5KD3g)
 [![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 
-> 一个为Dart而生，可预测和管理状态的库
+> 一个为 Dart 而生，可预测和管理状态的库
 
 - 简单 & 轻便
 - 可测试性高
 - 为 Dart，Flutter，和 AngularDart
 
+[迁移到 v6.1.0](migration.md)
 [GitHub](https://github.com/felangel/bloc/)
 [开始](zh-cn/gettingstarted.md)

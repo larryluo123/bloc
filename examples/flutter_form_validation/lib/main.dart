@@ -1,8 +1,12 @@
+import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_validation/bloc/my_form_bloc.dart';
+import 'package:formz/formz.dart';
 
-main() {
+void main() {
+  EquatableConfig.stringify = kDebugMode;
   runApp(App());
 }
 
@@ -11,13 +15,10 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: Text('Flutter Form Validation')),
-        body: Padding(
-          padding: EdgeInsets.all(20.0),
-          child: BlocProvider(
-            create: (context) => MyFormBloc(),
-            child: MyForm(),
-          ),
+        appBar: AppBar(title: const Text('Flutter Form Validation')),
+        body: BlocProvider(
+          create: (_) => MyFormBloc(),
+          child: MyForm(),
         ),
       ),
     );
@@ -25,122 +26,185 @@ class App extends StatelessWidget {
 }
 
 class MyForm extends StatefulWidget {
-  State<MyForm> createState() => _MyFormState();
+  @override
+  _MyFormState createState() => _MyFormState();
 }
 
 class _MyFormState extends State<MyForm> {
-  MyFormBloc _myFormBloc;
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _myFormBloc = BlocProvider.of<MyFormBloc>(context);
-    _emailController.addListener(_onEmailChanged);
-    _passwordController.addListener(_onPasswordChanged);
+    _emailFocusNode.addListener(() {
+      if (!_emailFocusNode.hasFocus) {
+        context.read<MyFormBloc>().add(EmailUnfocused());
+        FocusScope.of(context).requestFocus(_passwordFocusNode);
+      }
+    });
+    _passwordFocusNode.addListener(() {
+      if (!_passwordFocusNode.hasFocus) {
+        context.read<MyFormBloc>().add(PasswordUnfocused());
+      }
+    });
   }
+
+  @override
+  void dispose() {
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<MyFormBloc, MyFormState>(
+      listener: (context, state) {
+        if (state.status.isSubmissionSuccess) {
+          Scaffold.of(context).hideCurrentSnackBar();
+          showDialog<void>(
+            context: context,
+            builder: (_) => SuccessDialog(),
+          );
+        }
+        if (state.status.isSubmissionInProgress) {
+          Scaffold.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(content: Text('Submitting...')),
+            );
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: <Widget>[
+            EmailInput(focusNode: _emailFocusNode),
+            PasswordInput(focusNode: _passwordFocusNode),
+            SubmitButton(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EmailInput extends StatelessWidget {
+  const EmailInput({Key key, this.focusNode}) : super(key: key);
+
+  final FocusNode focusNode;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<MyFormBloc, MyFormState>(
       builder: (context, state) {
-        if (state.formSubmittedSuccessfully) {
-          return SuccessDialog(onDismissed: () {
-            _emailController.clear();
-            _passwordController.clear();
-            _myFormBloc.add(FormReset());
-          });
-        }
-        return Form(
-          child: Column(
-            children: <Widget>[
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  icon: Icon(Icons.email),
-                  labelText: 'Email',
-                ),
-                keyboardType: TextInputType.emailAddress,
-                autovalidate: true,
-                validator: (_) {
-                  return state.isEmailValid ? null : 'Invalid Email';
-                },
-              ),
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  icon: Icon(Icons.lock),
-                  labelText: 'Password',
-                ),
-                obscureText: true,
-                autovalidate: true,
-                validator: (_) {
-                  return state.isPasswordValid ? null : 'Invalid Password';
-                },
-              ),
-              RaisedButton(
-                onPressed: state.isFormValid ? _onSubmitPressed : null,
-                child: Text('Submit'),
-              ),
-            ],
+        return TextFormField(
+          initialValue: state.email.value,
+          focusNode: focusNode,
+          decoration: InputDecoration(
+            icon: const Icon(Icons.email),
+            labelText: 'Email',
+            helperText: 'A complete, valid email e.g. joe@gmail.com',
+            errorText: state.email.invalid
+                ? 'Please ensure the email entered is valid'
+                : null,
           ),
+          keyboardType: TextInputType.emailAddress,
+          onChanged: (value) {
+            context.read<MyFormBloc>().add(EmailChanged(email: value));
+          },
+          textInputAction: TextInputAction.next,
         );
       },
     );
   }
+}
+
+class PasswordInput extends StatelessWidget {
+  const PasswordInput({Key key, this.focusNode}) : super(key: key);
+
+  final FocusNode focusNode;
 
   @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return BlocBuilder<MyFormBloc, MyFormState>(
+      builder: (context, state) {
+        return TextFormField(
+          initialValue: state.password.value,
+          focusNode: focusNode,
+          decoration: InputDecoration(
+            icon: const Icon(Icons.lock),
+            helperText:
+                '''Password should be at least 8 characters with at least one letter and number''',
+            helperMaxLines: 2,
+            labelText: 'Password',
+            errorMaxLines: 2,
+            errorText: state.password.invalid
+                ? '''Password must be at least 8 characters and contain at least one letter and number'''
+                : null,
+          ),
+          obscureText: true,
+          onChanged: (value) {
+            context.read<MyFormBloc>().add(PasswordChanged(password: value));
+          },
+          textInputAction: TextInputAction.done,
+        );
+      },
+    );
   }
+}
 
-  void _onEmailChanged() {
-    _myFormBloc.add(EmailChanged(email: _emailController.text));
-  }
-
-  void _onPasswordChanged() {
-    _myFormBloc.add(PasswordChanged(password: _passwordController.text));
-  }
-
-  void _onSubmitPressed() {
-    _myFormBloc.add(FormSubmitted());
+class SubmitButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MyFormBloc, MyFormState>(
+      buildWhen: (previous, current) => previous.status != current.status,
+      builder: (context, state) {
+        return RaisedButton(
+          onPressed: state.status.isValidated
+              ? () => context.read<MyFormBloc>().add(FormSubmitted())
+              : null,
+          child: const Text('Submit'),
+        );
+      },
+    );
   }
 }
 
 class SuccessDialog extends StatelessWidget {
-  final VoidCallback onDismissed;
-
-  SuccessDialog({Key key, @required this.onDismissed}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(20),
-      child: Column(
-        children: <Widget>[
-          Row(
-            mainAxisSize: MainAxisSize.max,
-            children: <Widget>[
-              Icon(Icons.info),
-              Flexible(
-                child: Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Text(
-                    'Form Submitted Successfully!',
-                    softWrap: true,
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              children: <Widget>[
+                const Icon(Icons.info),
+                const Flexible(
+                  child: Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Text(
+                      'Form Submitted Successfully!',
+                      softWrap: true,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          RaisedButton(
-            child: Text('OK'),
-            onPressed: onDismissed,
-          ),
-        ],
+              ],
+            ),
+            RaisedButton(
+              child: const Text('OK'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
       ),
     );
   }

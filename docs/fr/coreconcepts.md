@@ -8,7 +8,7 @@ Dans les prochaines sections, nous allons discuter en détail de chacun d'entre 
 
 ## Événements
 
-> Les événements sont la contribution d'un Bloc. Elles sont généralement distribuées en réponse aux interactions de l'utilisateur telles que les pressions sur les boutons ou les événements du cycle de vie tels que les chargements de pages.
+> Les événements sont la contribution d'un Bloc. Ils sont généralement distribués en réponse aux interactions de l'utilisateur telles que les pressions sur les boutons ou les événements du cycle de vie tels que les chargements de pages.
 
 Lors de la conception d'une application, nous devons prendre du recul et définir comment les utilisateurs vont interagir avec elle. Dans le contexte de notre application compteur, nous aurons deux boutons pour incrémenter et décrémenter notre compteur.
 
@@ -76,13 +76,13 @@ On peut tout mettre ensemble comme ça :
 
 ## Blocs
 
-> Un Bloc (Business Logic Component) est un composant qui convertit un `Stream` d'évvènements entrants `Events` en un `Stream` d'états sortants `States`. Pensez à un Bloc comme étant des "cerveaux" décrit ci-dessus.
+> Un Bloc (Business Logic Component) est un composant qui convertit un `Stream` d'évènements entrants `Events` en un `Stream` d'états sortants `States`. Pensez à un Bloc comme étant des "cerveaux" décrits ci-dessus.
 
 > Chaque Bloc doit étendre la classe de base `Bloc` qui fait partie du paquet de base du bloc.
 
 [counter_bloc.dart](../_snippets/core_concepts/counter_bloc_class.dart.md ':include')
 
-Dans l'extrait de code ci-dessus, nous déclarons notre `CounterBloc` comme un Bloc qui convertit `CounterEvents` en `ints`.
+Dans l'extrait de code ci-dessus, nous déclarons notre `CounterBloc` comme un Bloc qui convertit `CounterEvent`s en `int`s.
 
 > Chaque Bloc doit définir un état initial qui est l'état avant que les événements n'aient été reçus.
 
@@ -134,26 +134,24 @@ Tout comme nous pouvons gérer les `Transitions` au niveau des blocs, nous pouvo
 
 Maintenant que nous avons écrasé `onError`, nous pouvons faire ce que nous voulons à chaque fois qu'une `Exception` est levée.
 
-## BlocDelegate
+## BlocObserver
 
 Un avantage supplémentaire de l'utilisation du Bloc, c'est que nous pouvons avoir accès à toutes les " Transitions " en un seul endroit. Même si dans cette application nous n'avons qu'un seul Bloc, il est assez courant dans les grandes applications d'avoir plusieurs blocs gérant différentes parties de l'état de l'application.
 
-Si nous voulons pouvoir faire quelque chose en réponse à toutes les `Transitions`, nous pouvons simplement créer notre propre `BlocDelegate`.
+Si nous voulons pouvoir faire quelque chose en réponse à toutes les `Transitions`, nous pouvons simplement créer notre propre `BlocObserver`.
 
-[simple_bloc_delegate.dart](../_snippets/core_concepts/simple_bloc_delegate.dart.md ':include')
+[simple_bloc_observer.dart](../_snippets/core_concepts/simple_bloc_observer.dart.md ':include')
 
-?> **Note**: Tout ce que nous avons à faire est d'étendre `BlocDelegate` et de remplacer la méthode `onTransition`.
+?> **Note**: Tout ce que nous avons à faire est d'étendre `BlocObserver` et de remplacer la méthode `onTransition`.
 
-Pour dire à Bloc d'utiliser notre `SimpleBlocDelegate`, il nous suffit d'ajuster notre fonction `main`.
+Pour dire à Bloc d'utiliser notre `SimpleBlocObserver`, il nous suffit d'ajuster notre fonction `main`.
 
-[main.dart](../_snippets/core_concepts/simple_bloc_delegate_main.dart.md ':include')
+[main.dart](../_snippets/core_concepts/simple_bloc_observer_main.dart.md ':include')
 
-Si nous voulons pouvoir faire quelque chose en réponse à tous les `Events` envoyés, nous pouvons aussi remplacer la méthode `onEvent` dans notre `SimpleBlocDelegate`.
+Si nous voulons pouvoir faire quelque chose en réponse à tous les `Events` envoyés, nous pouvons aussi remplacer la méthode `onEvent` dans notre `SimpleBlocObserver`.
 
-[simple_bloc_delegate.dart](../_snippets/core_concepts/simple_bloc_delegate_on_event.dart.md ':include')
+[simple_bloc_observer.dart](../_snippets/core_concepts/simple_bloc_observer_on_event.dart.md ':include')
 
-Si nous voulons pouvoir faire quelque chose en réponse à toutes les `Exceptions` jetées dans un Bloc, nous pouvons aussi écraser la méthode `onError` dans notre `SimpleBlocDelegate`.
+Si nous voulons pouvoir faire quelque chose en réponse à toutes les `Exceptions` jetées dans un Bloc, nous pouvons aussi écraser la méthode `onError` dans notre `SimpleBlocObserver`.
 
-[simple_bloc_delegate.dart](../_snippets/core_concepts/simple_bloc_delegate_complete.dart.md ':include')
-
-?> **Note**: Le `BlocSupervisor` est un singleton qui supervise tous les Blocs et délègue des responsabilités au `BlocDelegate`.
+[simple_bloc_observer.dart](../_snippets/core_concepts/simple_bloc_observer_complete.dart.md ':include')

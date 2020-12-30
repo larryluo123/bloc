@@ -1,684 +1,341 @@
-# Flutter Login Tutorial
+# Tutorial de iniciar sesión en Flutter
 
-![intermediate](https://img.shields.io/badge/nivel-intermedio-orange)
+![intermediate](https://img.shields.io/badge/nivel-intermedio-orange.svg)
 
-> En el siguiente tutorial, crearemos un flujo de inicio de sesión en Flutter utilizando la libreria Bloc.
+> En el siguiente tutorial, crearemos un flujo de inicio de sesión en Flutter usando la biblioteca Bloc.
 
 ![demo](../assets/gifs/flutter_login.gif)
 
 ## Para comenzar
 
-Comenzaremos creando un nuevo proyecto de Flutter
+Empezaremos creando un nuevo proyecto en Flutter
 
-```bash
+```sh
 flutter create flutter_login
 ```
 
-Luego podemos continuar y reemplazar el contenido de `pubspec.yaml` con
+A continuación, podemos instalar todas nuestras dependencias
 
-```yaml
-name: flutter_login
-description: A new Flutter project.
-version: 1.0.0+1
-
-environment:
-  sdk: ">=2.6.0 <3.0.0"
-
-dependencies:
-  flutter:
-    sdk: flutter
-  flutter_bloc: ^3.2.0
-  meta: ^1.1.6
-  equatable: ^1.0.0
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-
-flutter:
-  uses-material-design: true
-```
-
-y luego instalar todas nuestras dependencias
-
-```bash
+```sh
 flutter packages get
 ```
 
-## UserRepository
+## Authentication Repository
 
-Vamos a necesitar crear un `UserRepository` que nos ayude a administrar los datos de un usuario.
+Lo primero que vamos a hacer es crear un paquete `authentication_repository` que será responsable de administrar el dominio de autenticación.
 
-```dart
-class UserRepository {
-  Future<String> authenticate({
-    @required String username,
-    @required String password,
-  }) async {
-    await Future.delayed(Duration(seconds: 1));
-    return 'token';
-  }
+Empezaremos creando un directorio `packages/authentication_repository` en la raíz del proyecto que contendrá todos los paquetes internos.
 
-  Future<void> deleteToken() async {
-    /// delete from keystore/keychain
-    await Future.delayed(Duration(seconds: 1));
-    return;
-  }
+En un nivel alto, la estructura del directorio debería verse así:
 
-  Future<void> persistToken(String token) async {
-    /// write to keystore/keychain
-    await Future.delayed(Duration(seconds: 1));
-    return;
-  }
-
-  Future<bool> hasToken() async {
-    /// read from keystore/keychain
-    await Future.delayed(Duration(seconds: 1));
-    return false;
-  }
-}
+```sh
+├── android
+├── ios
+├── lib
+├── packages
+│   └── authentication_repository
+└── test
 ```
 
-?> **Nota**: Nuestro repositorio de usuarios está haciendo mock de todas las diferentes implementaciones por el bien de la simplicidad, pero en una aplicación real puede inyectar un [HttpClient](https://pub.dev/packages/http), así también algo como [Flutter Secure Storage](https://pub.dev/packages/flutter_secure_storage) para solicitar tokens y leerlos/escribirlos en el almacén de claves/llavero.
+A continuación, podemos crear un `pubspec.yaml` para el paquete `authentication_repository`:
 
-## Authentication States
+[pubspec.yaml](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/packages/authentication_repository/pubspec.yaml ':include')
 
-A continuación, vamos a necesitar determinar cómo vamos a administrar el estado de nuestra aplicación y crear los bloques necesarios (componentes de lógica empresarial).
+?> **Nota**: `package:authentication_repository` será un paquete de Dart puro y por sencillez solo tendremos una dependencia en [package:meta](https://pub.dev/packages/meta) para algunas anotaciones.
 
-En un nivel alto, vamos a necesitar administrar el estado de autenticación del usuario. El estado de autenticación de un usuario puede ser uno de los siguientes:
+A continuación, debemos implementar la clase `AuthenticationRepository` que estará en `lib/src/authentication_repository.dart`.
 
-- uninitialized - esperando para ver si el usuario está autenticado o no en el inicio de la aplicación.
-- loading - esperando para persistir/eliminar un token
-- authenticated - autenticado con éxito
-- unauthenticated - no autenticado
+[authentication_repository.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/packages/authentication_repository/lib/src/authentication_repository.dart ':include')
 
-Cada uno de estos estados tendrá una implicación en lo que ve el usuario.
+El `AuthenticationRepository` expone un `Stream` de actualizaciones de `AuthenticationStatus` que se utilizarán para notificar a la aplicación cuando un usuario inicie o cierre sesión.
 
-Por ejemplo:
+Además, existen los métodos `logIn` y `logOut` que son muy simples, pero que pueden extenderse fácilmente para autenticarse por ejemplo con `FirebaseAuth`, o algún otro proveedor de autenticación.
 
-- si el estado de autenticación no fue inicializado, el usuario podría estar viendo una pantalla de bienvenida.
-- si el estado de autenticación se estaba cargando, el usuario podría estar viendo un indicador de progreso.
-- si el estado de autenticación fue autenticado, el usuario podría ver una pantalla de inicio.
-- si el estado de autenticación no estaba autenticado, el usuario podría ver un formulario de inicio de sesión.
+?> **Nota**: Dado que estamos manteniendo un `StreamController` internamente, se expone un método `dispose` para que el controlador pueda cerrarse cuando ya no sea necesario.
 
-> Es fundamental identificar cuáles serán los diferentes estados antes de sumergirse en la implementación.
+Por último, necesitamos crear `lib/authentication_repository.dart` que contendrá las exportaciones públicas:
 
-Ahora que tenemos identificados nuestros estados de autenticación, podemos implementar nuestra clase `AuthenticationState`.
+[authentication_repository.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/packages/authentication_repository/lib/authentication_repository.dart ':include')
 
-```dart
-import 'package:equatable/equatable.dart';
+Eso es todo para el `AuthenticationRepository`, a continuación trabajaremos en el `UserRepository`.
 
-abstract class AuthenticationState extends Equatable {
-  @override
-  List<Object> get props => [];
-}
+## User Repository
 
-class AuthenticationUninitialized extends AuthenticationState {}
+Al igual que con el `AuthenticationRepository`, crearemos un paquete `user_repository` dentro del directorio `packages`.
 
-class AuthenticationAuthenticated extends AuthenticationState {}
-
-class AuthenticationUnauthenticated extends AuthenticationState {}
-
-class AuthenticationLoading extends AuthenticationState {}
+```sh
+├── android
+├── ios
+├── lib
+├── packages
+│   ├── authentication_repository
+│   └── user_repository
+└── test
 ```
 
-?> **Nota**: El paquete [`equatable`](https://pub.dev/packages/equatable) se utiliza para poder comparar dos instancias de `AuthenticationState`. Por defecto, `==` devuelve verdadero solo si los dos objetos son la misma instancia.
+A continuación, crearemos el `pubspec.yaml` para el `user_repository`:
 
-## Authentication Events
+[pubspec.yaml](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/packages/user_repository/pubspec.yaml ':include')
 
-Ahora que tenemos definido nuestro `AuthenticationState`, necesitamos definir los` AuthenticationEvents` a los que reaccionará nuestro `AuthenticationBloc`.
+El `user_repository` será responsable del dominio del usuario y expondrá las API para interactuar con el usuario actual.
 
-Nosotros necesitaremos:
+Lo primero que definiremos es el modelo de usuario en `lib/src/models/user.dart`:
 
-- un evento `AppStarted` para notificar al bloc que necesita verificar si el usuario está autenticado actualmente o no.
-- un evento `LoggedIn` para notificar al bloc que el usuario ha iniciado sesión correctamente.
-- un evento `LoggedOut` para notificar al bloc que el usuario ha cerrado la sesión correctamente.
+[user.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/packages/user_repository/lib/src/models/user.dart ':include')
 
-```dart
-import 'package:meta/meta.dart';
-import 'package:equatable/equatable.dart';
+Por sencillez, un usuario solo tiene una propiedad `id` pero en práctica podríamos tener propiedades adicionales como `firstName`, `lastName`, `avatarUrl`, etc...
 
-abstract class AuthenticationEvent extends Equatable {
-  const AuthenticationEvent();
+?> **Nota**: [paquete:equatable](https://pub.dev/packages/equatable) se utiliza para habilitar las comparaciones de valores del objeto `User`.
 
-  @override
-  List<Object> get props => [];
-}
+A continuación, podemos crear un `models.dart` en`lib/src/models` que exportará todos los modelos para que podamos usar un solo estado de importación para importar varios modelos.
 
-class AppStarted extends AuthenticationEvent {}
+[models.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/packages/user_repository/lib/src/models/models.dart ':include')
 
-class LoggedIn extends AuthenticationEvent {
-  final String token;
+Ahora que se han definido los modelos, podemos implementar la clase `UserRepository`.
 
-  const LoggedIn({@required this.token});
+[user_repository.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/packages/user_repository/lib/src/user_repository.dart ':include')
 
-  @override
-  List<Object> get props => [token];
+Para este simple ejemplo, el `UserRepository` expone un método único `getUser` que recuperará al usuario actual. Estamos eliminando esto, pero en práctica es aquí es donde consultaríamos al usuario actual desde el backend.
 
-  @override
-  String toString() => 'LoggedIn { token: $token }';
-}
+Casi terminamos con el paquete `user_repository` - lo único que queda por hacer es crear el archivo `user_repository.dart` en `lib` que define las exportaciones públicas:
 
-class LoggedOut extends AuthenticationEvent {}
+[user_repository.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/packages/user_repository/lib/user_repository.dart ':include')
+
+Ahora que tenemos los paquetes `authentication_repository` y `user_repository` completos, podemos enfocarnos en la aplicación Flutter.
+
+## Instalación de dependencias
+
+Comencemos actualizando el `pubspec.yaml` generado en la raíz de nuestro proyecto:
+
+[pubspec.yaml](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/pubspec.yaml ':include')
+
+Podemos instalar las dependencias ejecutando:
+
+```sh
+flutter packages get
 ```
-
-?> **Nota**: el paquete `meta` se usa para anotar los parámetros de `AuthenticationEvent` como `@required`. Esto hará que el analizador de dart advierta a los desarrolladores si no proporcionan los parámetros necesarios.
 
 ## Authentication Bloc
 
-Ahora que tenemos definidos nuestro `AuthenticationState` y `AuthenticationEvents`, podemos trabajar en la implementación del `AuthenticationBloc` que gestionará la comprobación y actualización del` AuthenticationState` de un usuario en respuesta a `AuthenticationEvents`.
+El `AuthenticationBloc` será responsable de reaccionar a los cambios en el estado de autenticación (expuesto por el `AuthenticationRepository`) y emitirá estados a los que podemos reaccionar en la capa de presentación.
 
-Comenzaremos creando nuestra clase `AuthenticationBloc`.
+La implementación de `AuthenticationBloc` está dentro de `lib/authentication` porque tratamos la autenticación como una característica en nuestra capa de aplicación.
 
-```dart
-class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> {
-  final UserRepository userRepository;
-
-  AuthenticationBloc({@required this.userRepository}): assert(userRepository != null);
-}
+```sh
+├── lib
+│   ├── app.dart
+│   ├── authentication
+│   │   ├── authentication.dart
+│   │   └── bloc
+│   │       ├── authentication_bloc.dart
+│   │       ├── authentication_event.dart
+│   │       └── authentication_state.dart
+│   ├── main.dart
 ```
 
-?> **Nota**: Solo de leer la definición de la clase, ya sabemos que este bloc va a convertir `AuthenticationEvents` en `AuthenticationStates`.
+?> **Sugerencia**: Use la [extensión de VSCode](https://marketplace.visualstudio.com/items?itemName=FelixAngelov.bloc) o [el plugin de IntelliJ](https://plugins.jetbrains.com/plugin/12129-bloc) para crear blocs automáticamente.
 
-?> **Nota**: Nuestro `AuthenticationBloc` depende del `UserRepository`.
+### authentication_event.dart
 
-Podemos comenzar anulando `initialState` al estado `AuthenticationUninitialized()`.
+> Las instancias de `AuthenticationEvent` serán la entrada al `AuthenticationBloc` y se procesarán y usarán para emitir nuevas instancias de `AuthenticationState`.
 
-```dart
-@override
-AuthenticationState get initialState => AuthenticationUninitialized();
+En esta aplicación, el `AuthenticationBloc` reaccionará a dos eventos diferentes:
+
+- `AuthenticationStatusChanged`: notifica al bloc de un cambio en el AuthenticationStatus del usuario
+- `AuthenticationLogoutRequested`: notifica al bloc de una solicitud de cierre de sesión
+
+[authentication_event.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/authentication/bloc/authentication_event.dart ':include')
+
+A continuación, echemos un vistazo a `AuthenticationState`.
+
+### authentication_state.dart
+
+> Las instancias de `AuthenticationState` serán la salida del `AuthenticationBloc` y serán consumidas por la capa de presentación.
+
+La clase `AuthenticationState` tiene tres constructores con nombre (named constructors):
+
+- `AuthenticationState.unknown()`: el estado predeterminado que indica que el bloc aún no sabe si el usuario actual está autenticado o no.
+
+- `AuthenticationState.authenticated()`: el estado que indica que el usuario está autenticado actualmente.
+
+- `AuthenticationState.unauthenticated()`: el estado que indica que el usuario actualmente no está autenticado.
+
+[authentication_state.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/authentication/bloc/authentication_state.dart ':include')
+
+Ahora que hemos visto las implementaciones de `AuthenticationEvent` y `AuthenticationState`, echemos un vistazo a `AuthenticationBloc`.
+
+### authentication_bloc.dart
+
+> El `AuthenticationBloc` gestiona el estado de autenticación de la aplicación que se utiliza para determinar cosas como si el usuario debe iniciar o no en una página de inicio de sesión o en una página de inicio donde estará autenticado.
+
+[authentication_bloc.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/authentication/bloc/authentication_bloc.dart ':include')
+
+El `AuthenticationBloc` tiene una dependencia tanto del `AuthenticationRepository` como del `UserRepository` y define el estado inicial como `AuthenticationState.unknown()`.
+
+En el cuerpo del constructor, el `AuthenticationBloc` se suscribe al flujo de `status` del `AuthenticationRepository` y agrega un evento `AuthenticationStatusChanged` internamente en respuesta a un nuevo `AuthenticationStatus`.
+
+!> El `AuthenticationBloc` anula el método `close` para eliminar tanto el `StreamSubscription` como el `AuthenticationRepository`.
+
+A continuación, `mapEventToState` maneja la transformación de las instancias de`AuthenticationEvent` entrantes en nuevas instancias de `AuthenticationState`.
+
+Cuando se agrega un evento `AuthenticationStatusChanged` si el estado asociado es `AuthenticationStatus.authenticated`, el `AuthentictionBloc` consulta al usuario a través del `UserRepository`.
+
+## main.dart
+
+A continuación, podemos reemplazar el `main.dart` predeterminado con:
+
+[main.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/main.dart ':include')
+
+?> **Nota**: Estamos inyectando una sola instancia de `AuthenticationRepository` y `UserRepository` en el widget de `App` (que veremos a continuación).
+
+## App
+
+`app.dart` contendrá el widget raíz `App` para toda la aplicación.
+
+[app.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/app.dart ':include')
+
+?> **Nota**: `app.dart` se divide en dos partes, `App` y `AppView`. `App` es responsable de crear/proporcionar el `AuthenticationBloc` que será consumido por el `AppView`. Este desacoplamiento nos permitirá probar fácilmente los widgets `App` y `AppView` más adelante.
+
+?> **Nota**: `RepositoryProvider` se utiliza para proporcionar la instancia única de `AuthenticationRepository` a toda la aplicación, lo que será útil más adelante.
+
+`AppView` es un `StatefulWidget` porque mantiene una `GlobalKey` que se utiliza para acceder al `NavigatorState`. Por defecto, `AppView` renderizará el `SplashPage` (que veremos más adelante) y usa `BlocListener` para navegar a diferentes páginas según los cambios en el `AuthenticationState`.
+
+## Splash
+
+> La función de presentación solo contendrá una vista simple que se mostrará justo cuando se inicie la aplicación, mientras que la aplicación determina si el usuario está autenticado.
+
+```sh
+lib
+└── splash
+    ├── splash.dart
+    └── view
+        └── splash_page.dart
 ```
 
-Ahora todo lo que queda es implementar `mapEventToState`.
+[splash_page.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/splash/view/splash_page.dart ':include')
 
-```dart
-@override
-Stream<AuthenticationState> mapEventToState(
-  AuthenticationEvent event,
-) async* {
-  if (event is AppStarted) {
-    final bool hasToken = await userRepository.hasToken();
+?> **Sugerencia**: `SplashPage` expone una `Ruta` estática que hace que sea muy fácil navegar a través de `Navigator.of(context).push(SplashPage.route())`;
 
-    if (hasToken) {
-      yield AuthenticationAuthenticated();
-    } else {
-      yield AuthenticationUnauthenticated();
-    }
-  }
+## Login
 
-  if (event is LoggedIn) {
-    yield AuthenticationLoading();
-    await userRepository.persistToken(event.token);
-    yield AuthenticationAuthenticated();
-  }
+> La función de inicio de sesión contiene un `LoginPage`, `LoginForm` y `LoginBloc` y permite a los usuarios ingresar un nombre de usuario y contraseña para iniciar sesión en la aplicación.
 
-  if (event is LoggedOut) {
-    yield AuthenticationLoading();
-    await userRepository.deleteToken();
-    yield AuthenticationUnauthenticated();
-  }
-}
+```sh
+├── lib
+│   ├── login
+│   │   ├── bloc
+│   │   │   ├── login_bloc.dart
+│   │   │   ├── login_event.dart
+│   │   │   └── login_state.dart
+│   │   ├── login.dart
+│   │   ├── models
+│   │   │   ├── models.dart
+│   │   │   ├── password.dart
+│   │   │   └── username.dart
+│   │   └── view
+│   │       ├── login_form.dart
+│   │       ├── login_page.dart
+│   │       └── view.dart
 ```
 
-¡Genial! Nuestro `AuthenticationBloc` final debería verse así
+### Login Models
 
-```dart
-import 'dart:async';
+Estamos usando [package:formz](https://pub.dev/packages/formz) para crear modelos estándar y reutilizables con el `username` y el `password`.
 
-import 'package:meta/meta.dart';
-import 'package:bloc/bloc.dart';
-import 'package:user_repository/user_repository.dart';
+#### Username
 
-import 'package:flutter_login/authentication/authentication.dart';
+[username.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/login/models/username.dart ':include')
 
-class AuthenticationBloc
-    extends Bloc<AuthenticationEvent, AuthenticationState> {
-  final UserRepository userRepository;
+Por sencillez, solo estamos validando el nombre de usuario para asegurarnos de que no esté vacío, pero en práctica puede imponer el uso de caracteres especiales, la longitud, etc...
 
-  AuthenticationBloc({@required this.userRepository})
-      : assert(userRepository != null);
+#### Password
 
-  @override
-  AuthenticationState get initialState => AuthenticationUninitialized();
+[password.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/login/models/password.dart ':include')
 
-  @override
-  Stream<AuthenticationState> mapEventToState(
-    AuthenticationEvent event,
-  ) async* {
-    if (event is AppStarted) {
-      final bool hasToken = await userRepository.hasToken();
+Nuevamente, solo estamos realizando una verificación simple para asegurarnos de que la contraseña no esté vacía.
 
-      if (hasToken) {
-        yield AuthenticationAuthenticated();
-      } else {
-        yield AuthenticationUnauthenticated();
-      }
-    }
+#### Modelos de Barril
 
-    if (event is LoggedIn) {
-      yield AuthenticationLoading();
-      await userRepository.persistToken(event.token);
-      yield AuthenticationAuthenticated();
-    }
+Al igual que antes, hay un barril `models.dart` para facilitar la importación de los modelos `Username` y `Password` con una sola importación.
 
-    if (event is LoggedOut) {
-      yield AuthenticationLoading();
-      await userRepository.deleteToken();
-      yield AuthenticationUnauthenticated();
-    }
-  }
-}
+[models.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/login/models/models.dart ':include')
+
+### Login Bloc
+
+> El `LoginBloc` gestiona el estado del `LoginForm` y se encarga de validar el nombre de usuario y la contraseña, así como el estado del formulario.
+
+#### login_event.dart
+
+En esta aplicación hay tres tipos diferentes de `LoginEvent`:
+
+- `LoginUsernameChanged`: notifica al bloc que el nombre de usuario ha sido modificado.
+
+- `LoginPasswordChanged`: notifica al bloc que la contraseña ha sido modificada.
+
+- `LoginSubmitted`: notifica al bloc que el formulario ha sido enviado.
+
+[login_event.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/login/bloc/login_event.dart ':include')
+
+#### login_state.dart
+
+El `LoginState` contendrá el estado del formulario, así como los estados de entrada de nombre de usuario y contraseña.
+
+[login_state.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/login/bloc/login_state.dart ':include')
+
+?> **Nota**: Los modelos `Username` y `Password` se utilizan como parte de `LoginState` y el estado también es parte de [package:formz](https://pub.dev/packages/formz).
+
+#### login_bloc.dart
+
+> El `LoginBloc` es responsable de reaccionar a las interacciones del usuario en el `LoginForm` y de manejar la validación y el envío del formulario.
+
+[login_bloc.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/login/bloc/login_bloc.dart ':include')
+
+El `LoginBloc` tiene una dependencia del `AuthenticationRepository` porque cuando se envía el formulario, invoca `logIn`. El estado inicial del bloc es `puro`, lo que significa que ni las entradas ni la forma han sido tocadas o interactuadas.
+
+Siempre que cambie el `username` o el `password`, el bloc creará una variante sucia del modelo `Username`/`Password` y actualizará el estado del formulario a través de la API `Formz.validate`.
+
+Cuando se agrega el evento `LoginSubmitted`, si el estado actual del formulario es válido, el bloc realiza una llamada a `logIn` y actualiza el estado según el resultado de la solicitud.
+
+A continuación, echemos un vistazo a `LoginPage` y `LoginForm`.
+
+### Login Page
+
+> La `LoginPage` es responsable de exponer la `Ruta` así como de crear y proporcionar el `LoginBloc` al `LoginForm`.
+
+[login_page.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/login/view/login_page.dart ':include')
+
+?> **Nota**: `context.read` se usa para buscar la instancia de `AuthenticationRepository` a través de `BuildContext`.
+
+### Login Form
+
+> El `LoginForm` maneja la notificación que hace a `LoginBloc` de los eventos del usuario y también responde a los cambios de estado usando `BlocBuilder` y `BlocListener`.
+
+[login_form.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/login/view/login_form.dart ':include')
+
+`BlocListener` se usa para mostrar un `SnackBar` si falla el envío de inicio de sesión. Además, los widgets `BlocBuilder` se utilizan para envolver cada uno de los widgets `TextField` y hacer uso de la propiedad `buildWhen` para optimizar las reconstrucciones. La devolución de llamada `onChanged` se utiliza para notificar al `LoginBloc` de los cambios del usuario/contraseña.
+
+El widget `_LoginButton` solo está habilitado si el estado del formulario es válido y se muestra un `CircularProgressIndicator` en su lugar mientras se envía el formulario.
+
+## Home
+
+> Tras una solicitud de `logIn` exitosa, el estado del `AuthenticationBloc` cambiará a `authenticated` y el usuario será dirigido al `HomePage` donde mostramos el `id` del usuario, así como un botón para cerrar sesión.
+
+```sh
+├── lib
+│   ├── home
+│   │   ├── home.dart
+│   │   └── view
+│   │       └── home_page.dart
 ```
 
-Ahora que tenemos nuestro `AuthenticationBloc` totalmente implementado, vamos a trabajar en la capa de presentación.
+### Home Page
 
-## Splash Page
+La `HomePage` puede acceder al usuario actual a través de `context.select((AuthenticationBloc bloc) => bloc.state.user.id)` y lo muestra a través de un widget de `Text`. Además, cuando se presiona el botón de cierre de sesión, se agrega un evento `AuthenticationLogoutRequested` al` AuthenticationBloc`.
 
-Lo primero que necesitaremos es un widget `SplashPage` que servirá como nuestra Pantalla de bienvenida mientras su `AuthenticationBloc` determina si un usuario ha iniciado sesión o no.
+[home_page.dart](https://raw.githubusercontent.com/felangel/bloc/master/examples/flutter_login/lib/home/view/home_page.dart ':include')
 
-```dart
-import 'package:flutter/material.dart';
+?> **Nota**: `context.select((AuthenticationBloc bloc) => bloc.state.user.id)` se suscribe para recibir actualizaciones.
 
-class SplashPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Text('Splash Screen'),
-      ),
-    );
-  }
-}
-```
+En este punto, tenemos una implementación de inicio de sesión bastante sólida y hemos desacoplado nuestra capa de presentación de la capa de lógica empresarial mediante Bloc.
 
-## Home Page
-
-A continuación, necesitaremos crear nuestra `HomePage` para que podamos navegar por los usuarios allí una vez que hayan iniciado sesión con éxito.
-
-```dart
-import 'package:flutter/material.dart';
-
-import 'package:flutter_bloc/flutter_bloc.dart';
-
-import 'package:flutter_login/authentication/authentication.dart';
-
-class HomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Home'),
-      ),
-      body: Container(
-        child: Center(
-            child: RaisedButton(
-          child: Text('logout'),
-          onPressed: () {
-            BlocProvider.of<AuthenticationBloc>(context).add(LoggedOut());
-          },
-        )),
-      ),
-    );
-  }
-}
-```
-
-?> **Nota**: Esta es la primera clase en la que estamos usando `flutter_bloc`. Entraremos en `BlocProvider.of<AuthenticationBloc>(context)` en breve pero por ahora solo sabemos que permite que nuestra `HomePage` para acceder a nuestro `AuthenticationBloc`.
-
-?> **Nota**: Estamos agregando un evento `LoggedOut` a nuestro `AuthenticationBloc` cuando un usuario presiona el botón de cerrar sesión.
-
-A continuación, debemos crear una `LoginPage` y un `LoginForm`.
-
-Debido a que `LoginForm` tendrá que manejar la entrada del usuario (botón de inicio de sesión presionado) y necesitará tener cierta lógica comercial (obtener un token para un nombre de usuario/contraseña dado), necesitaremos crear un `LoginBloc`.
-
-Al igual que hicimos con el `AuthenticationBloc`, necesitaremos definir el `LoginState` y el `LoginEvents`. Comencemos con `LoginState`.
-
-## Login States
-
-```dart
-import 'package:meta/meta.dart';
-import 'package:equatable/equatable.dart';
-
-abstract class LoginState extends Equatable {
-  const LoginState();
-
-  @override
-  List<Object> get props => [];
-}
-
-class LoginInitial extends LoginState {}
-
-class LoginLoading extends LoginState {}
-
-class LoginFailure extends LoginState {
-  final String error;
-
-  const LoginFailure({@required this.error});
-
-  @override
-  List<Object> get props => [error];
-
-  @override
-  String toString() => 'LoginFailure { error: $error }';
-}
-```
-
-`LoginInitial` es el estado inicial de LoginForm.
-
-`LoginLoading` es el estado del LoginForm cuando estamos validando credenciales
-
-`LoginFailure` es el estado del LoginForm cuando falla un intento de inicio de sesión.
-
-Ahora que tenemos definido el `LoginState`, echemos un vistazo a la clase `LoginEvent`.
-
-## Login Events
-
-```dart
-import 'package:meta/meta.dart';
-import 'package:equatable/equatable.dart';
-
-abstract class LoginEvent extends Equatable {
-  const LoginEvent();
-}
-
-class LoginButtonPressed extends LoginEvent {
-  final String username;
-  final String password;
-
-  const LoginButtonPressed({
-    @required this.username,
-    @required this.password,
-  });
-
-  @override
-  List<Object> get props => [username, password];
-
-  @override
-  String toString() =>
-      'LoginButtonPressed { username: $username, password: $password }';
-}
-```
-
-`LoginButtonPressed` se agregará cuando un usuario presiona el botón de inicio de sesión. Notificará al `LoginBloc` que necesita solicitar un token para las credenciales dadas.
-
-Ahora podemos implementar nuestro `LoginBloc`.
-
-## Login Bloc
-
-```dart
-import 'dart:async';
-
-import 'package:meta/meta.dart';
-import 'package:bloc/bloc.dart';
-import 'package:user_repository/user_repository.dart';
-
-import 'package:flutter_login/authentication/authentication.dart';
-import 'package:flutter_login/login/login.dart';
-
-class LoginBloc extends Bloc<LoginEvent, LoginState> {
-  final UserRepository userRepository;
-  final AuthenticationBloc authenticationBloc;
-
-  LoginBloc({
-    @required this.userRepository,
-    @required this.authenticationBloc,
-  })  : assert(userRepository != null),
-        assert(authenticationBloc != null);
-
-  LoginState get initialState => LoginInitial();
-
-  @override
-  Stream<LoginState> mapEventToState(LoginEvent event) async* {
-    if (event is LoginButtonPressed) {
-      yield LoginLoading();
-
-      try {
-        final token = await userRepository.authenticate(
-          username: event.username,
-          password: event.password,
-        );
-
-        authenticationBloc.add(LoggedIn(token: token));
-        yield LoginInitial();
-      } catch (error) {
-        yield LoginFailure(error: error.toString());
-      }
-    }
-  }
-}
-```
-
-?> **Nota**: `LoginBloc` depende del `UserRepository` para autenticar a un usuario con un nombre de usuario y contraseña.
-
-?> **Nota**: `LoginBloc` depende de `AuthenticationBloc` para actualizar AuthenticationState cuando un usuario ha ingresado credenciales válidas.
-
-Ahora que tenemos nuestro `LoginBloc` podemos comenzar a trabajar en `Login Page` y `LoginForm`.
-
-## Login Page
-
-El widget `LoginPage` servirá como nuestro widget contenedor y proporcionará las dependencias necesarias para el widget `LoginForm` (`LoginBloc` y` AuthenticationBloc`).
-
-```dart
-import 'package:flutter/material.dart';
-
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:user_repository/user_repository.dart';
-
-import 'package:flutter_login/authentication/authentication.dart';
-import 'package:flutter_login/login/login.dart';
-
-class LoginPage extends StatelessWidget {
-  final UserRepository userRepository;
-
-  LoginPage({Key key, @required this.userRepository})
-      : assert(userRepository != null),
-        super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Login'),
-      ),
-      body: BlocProvider(
-        create: (context) {
-          return LoginBloc(
-            authenticationBloc: BlocProvider.of<AuthenticationBloc>(context),
-            userRepository: userRepository,
-          );
-        },
-        child: LoginForm(),
-      ),
-    );
-  }
-}
-```
-
-?> **Nota**: `LoginPage` es un `StatelessWidget`. El widget `LoginPage` usa el widget `BlocProvider` para crear, cerrar y proporcionar el `LoginBloc` al subárbol.
-
-?> **Nota**: Estamos utilizando el `UserRepository` inyectado para crear nuestro `LoginBloc`.
-
-?> **Nota**: Estamos utilizando `BlocProvider.of<AuthenticationBloc>(context)` nuevamente para acceder al `AuthenticationBloc` desde la `LoginPage`.
-
-A continuación, avancemos y creemos nuestro `LoginForm`.
-
-## Login Form
-
-```dart
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_login/login/login.dart';
-
-class LoginForm extends StatefulWidget {
-  @override
-  State<LoginForm> createState() => _LoginFormState();
-}
-
-class _LoginFormState extends State<LoginForm> {
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    _onLoginButtonPressed() {
-      BlocProvider.of<LoginBloc>(context).add(
-        LoginButtonPressed(
-          username: _usernameController.text,
-          password: _passwordController.text,
-        ),
-      );
-    }
-
-    return BlocListener<LoginBloc, LoginState>(
-      listener: (context, state) {
-        if (state is LoginFailure) {
-          Scaffold.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${state.error}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      },
-      child: BlocBuilder<LoginBloc, LoginState>(
-        builder: (context, state) {
-          return Form(
-            child: Column(
-              children: [
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'username'),
-                  controller: _usernameController,
-                ),
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'password'),
-                  controller: _passwordController,
-                  obscureText: true,
-                ),
-                RaisedButton(
-                  onPressed:
-                      state is! LoginLoading ? _onLoginButtonPressed : null,
-                  child: Text('Login'),
-                ),
-                Container(
-                  child: state is LoginLoading
-                      ? CircularProgressIndicator()
-                      : null,
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-```
-
-?> **Nota**: Nuestro `LoginForm` utiliza el widget `BlocBuilder` para que pueda reconstruirse siempre que haya un nuevo `LoginState`. `BlocBuilder` es un widget de Flutter que requiere un Bloc y una función de construcción. `BlocBuilder` maneja la construcción del widget en respuesta a nuevos estados. `BlocBuilder` es muy similar a `StreamBuilder` pero tiene una API más simple para reducir la cantidad de código repetitivo necesario y varias optimizaciones de rendimiento.
-
-No hay mucho más en el widget `LoginForm`, así que pasemos a crear nuestro indicador de carga.
-
-## Loading Indicator
-
-```dart
-import 'package:flutter/material.dart';
-
-class LoadingIndicator extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Center(
-        child: CircularProgressIndicator(),
-      );
-}
-```
-
-Ahora finalmente es hora de poner todo junto y crear nuestro widget de aplicación principal en `main.dart`.
-
-## Putting it all together
-
-```dart
-import 'package:flutter/material.dart';
-
-import 'package:bloc/bloc.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:user_repository/user_repository.dart';
-
-import 'package:flutter_login/authentication/authentication.dart';
-import 'package:flutter_login/splash/splash.dart';
-import 'package:flutter_login/login/login.dart';
-import 'package:flutter_login/home/home.dart';
-import 'package:flutter_login/common/common.dart';
-
-class SimpleBlocDelegate extends BlocDelegate {
-  @override
-  void onEvent(Bloc bloc, Object event) {
-    super.onEvent(bloc, event);
-    print(event);
-  }
-
-  @override
-  void onTransition(Bloc bloc, Transition transition) {
-    super.onTransition(bloc, transition);
-    print(transition);
-  }
-
-  @override
-  void onError(Bloc bloc, Object error, StackTrace stacktrace) {
-    super.onError(bloc, error, stacktrace);
-    print(error);
-  }
-}
-
-void main() {
-  BlocSupervisor.delegate = SimpleBlocDelegate();
-  final userRepository = UserRepository();
-  runApp(
-    BlocProvider<AuthenticationBloc>(
-      create: (context) {
-        return AuthenticationBloc(userRepository: userRepository)
-          ..add(AppStarted());
-      },
-      child: App(userRepository: userRepository),
-    ),
-  );
-}
-
-class App extends StatelessWidget {
-  final UserRepository userRepository;
-
-  App({Key key, @required this.userRepository}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: BlocBuilder<AuthenticationBloc, AuthenticationState>(
-        builder: (context, state) {
-          if (state is AuthenticationUninitialized) {
-            return SplashPage();
-          }
-          if (state is AuthenticationAuthenticated) {
-            return HomePage();
-          }
-          if (state is AuthenticationUnauthenticated) {
-            return LoginPage(userRepository: userRepository);
-          }
-          if (state is AuthenticationLoading) {
-            return LoadingIndicator();
-          }
-        },
-      ),
-    );
-  }
-}
-```
-
-?> **Nota**: Nuevamente, estamos usando `BlocBuilder` para reaccionar a los cambios en `AuthenticationState` para que podamos mostrarle al usuario `SplashPage`,` LoginPage`, `HomePage` o `LoadingIndicator` basado en el actual `AuthenticationState` .
-
-?> **Nota**: Nuestra aplicación está envuelta en un `BlocProvider` que hace que nuestra instancia de `AuthenticationBloc` esté disponible para todo el subárbol de widgets. `BlocProvider` es un widget de Flutter que proporciona un bloque a sus hijos a través de `BlocProvider.of(context)`. Se utiliza como un widget de inyección de dependencia (DI) para que se pueda proporcionar una sola instancia de un bloque a múltiples widgets dentro de un subárbol.
-
-Ahora `BlocProvider.of<AuthenticationBloc>(context)` en nuestro widget `HomePage` y `LoginPage` debería tener sentido.
-
-Dado que envolvimos nuestra `Aplicación` dentro de un `BlocProvider<AuthenticationBloc>`, podemos acceder a la instancia de nuestro `AuthenticationBloc` utilizando el método estático `BlocProvider.of<AuthenticationBloc>(context BuildContext)` desde cualquier parte del subárbol.
-
-En este punto, tenemos una implementación de inicio de sesión bastante sólida y hemos desacoplado nuestra capa de presentación de la capa de lógica de negocios mediante el uso de Bloc.
-
-La fuente completa para este ejemplo se puede encontrar [aquí](https://github.com/felangel/Bloc/tree/master/examples/flutter_login).
+La fuente completa de este ejemplo (incluidas las pruebas de unidades y widgets) se puede encontrar [aquí](https://github.com/felangel/Bloc/tree/master/examples/flutter_login).
